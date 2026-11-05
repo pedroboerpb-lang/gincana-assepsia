@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Raspadinha da Assepsia — Gincana Barão de Mauá</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    body {
+      background: radial-gradient(circle at top, #f0fdfa 0%, #e0f2fe 55%, #dbeafe 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .canvas-wrapper {
+      touch-action: none;
+      position: relative;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(2deg); }
+    }
+    @keyframes pulseRing {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.04); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    @keyframes stickerPop {
+      0% { transform: scale(0.3) rotate(-12deg); opacity: 0; }
+      70% { transform: scale(1.08) rotate(3deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .sticker-anim {
+      animation: stickerPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .float-anim {
+      animation: floatSlow 3.2s ease-in-out infinite;
+    }
+    .option-card {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .option-card:hover {
+      transform: translateY(-2px);
+    }
+    .option-card.selected {
+      border-color: #0d9488;
+      background-color: #f0fdfa;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.22);
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased pb-10">
+
+  <!-- Top Header / Navbar -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-teal-100 shadow-sm">
+    <div class="max-w-5xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center text-white shadow-sm shrink-0">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        </div>
+        <div class="truncate">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-100 px-2 py-0.5 rounded-full">Desafio Interativo</span>
+            <span class="hidden sm:inline-block text-xs font-medium text-slate-500">• 05/11/2026</span>
+          </div>
+          <h1 class="text-sm sm:text-base font-extrabold text-slate-900 truncate">Raspadinha da Assepsia Venosa</h1>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <button id="btnAlbum" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 transition shadow-sm">
+          <span>🦠 Figurinhas</span>
+          <span id="albumBadge" class="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-xs font-extrabold">0/5</span>
+        </button>
+
+        <button id="btnRules" type="button" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Como jogar">
+          <span>❓ Dica</span>
+        </button>
+
+        <button id="btnSound" type="button" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Ativar/Desativar Som" aria-label="Alternar som">
+          <span id="soundIcon" class="text-base">🔊</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-5xl mx-auto px-3 sm:px-6 pt-4">
+    <!-- Event Banner Mini -->
+    <div class="mb-4 rounded-2xl bg-gradient-to-r from-teal-700 via-teal-600 to-cyan-700 text-white p-3.5 sm:p-4 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <div class="flex items-start sm:items-center gap-3">
+        <div class="text-2xl sm:text-3xl shrink-0">🎯</div>
+        <div>
+          <p class="text-xs sm:text-sm font-semibold text-teal-100">Prepare o braço do paciente para a coleta de sangue!</p>
+          <p class="text-xs text-teal-50/90">Escolha o produto, o material e raspe o alvo na direção correta para evitar uma infecção bacteriana.</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 self-start sm:self-center shrink-0 bg-white/15 backdrop-blur px-3 py-1.5 rounded-xl border border-white/20 text-xs font-semibold">
+        <span>📍 Pátio da Barão de Mauá - Unidade Central</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+
+      <!-- Left Column: Step 1 & Step 2 Equipment Selection -->
+      <section class="lg:col-span-5 flex flex-col gap-4">
+
+        <!-- Step 1: Produto -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+          <div class="flex items-center justify-between mb-2.5">
+            <h2 class="text-sm font-extrabold uppercase tracking-wide text-slate-700 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+              Escolha o Produto Líquido
+            </h2>
+            <span id="selectedProductBadge" class="text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">Selecione 1 opção</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5" id="productOptions">
+            <!-- Álcool 70% -->
+            <button type="button" data-product="alcool70" class="option-card group flex flex-col items-center p-2.5 rounded-xl border-2 border-slate-200 bg-slate-50/60 text-center cursor-pointer">
+              <div class="w-11 h-11 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center mb-1.5 shadow-inner group-hover:scale-105 transition">
+                <svg class="w-7 h-7" viewBox="0 0 32 32" fill="none">
+                  <rect x="10" y="9" width="12" height="19" rx="3" fill="#06b6d4" fill-opacity="0.2" stroke="#0891b2" stroke-width="2"/>
+                  <path d="M13 5h6v4h-6z" fill="#0891b2"/>
+                  <path d="M11 16h10" stroke="#0891b2" stroke-width="1.5" stroke-dasharray="2 2"/>
+                  <text x="16" y="23" text-anchor="middle" fill="#0e7490" font-size="6.5" font-weight="800">70%</text>
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-slate-800 leading-tight">Álcool 70%</span>
+              <span class="text-[10px] text-slate-500 mt-0.5">Frasco hospitalar</span>
+            </button>
+
+            <!-- Detergente Líquido -->
+            <button type="button" data-product="detergente" class="option-card group flex flex-col items-center p-2.5 rounded-xl border-2 border-slate-200 bg-slate-50/60 text-center cursor-pointer">
+              <div class="w-11 h-11 rounded-xl bg-lime-100 text-lime-700 flex items-center justify-center mb-1.5 shadow-inner group-hover:scale-105 transition">
+                <svg class="w-7 h-7" viewBox="0 0 32 32" fill="none">
+                  <path d="M11 11c0-2 2-3 5-3s5 1 5 3v15a2 2 0 01-2 2H13a2 2 0 01-2-2V11z" fill="#84cc16" fill-opacity="0.25" stroke="#4d7c0f" stroke-width="2"/>
+                  <path d="M14 5h4v3h-4z" fill="#4d7c0f"/>
+                  <circle cx="14" cy="18" r="2" fill="#65a30d" fill-opacity="0.5"/>
+                  <circle cx="18" cy="22" r="1.5" fill="#65a30d" fill-opacity="0.5"/>
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-slate-800 leading-tight">Detergente Líquido</span>
+              <span class="text-[10px] text-slate-500 mt-0.5">Uso doméstico</span>
+            </button>
+
+            <!-- Acetona -->
+            <button type="button" data-product="acetona" class="option-card group flex flex-col items-center p-2.5 rounded-xl border-2 border-slate-200 bg-slate-50/60 text-center cursor-pointer">
+              <div class="w-11 h-11 rounded-xl bg-fuchsia-100 text-fuchsia-700 flex items-center justify-center mb-1.5 shadow-inner group-hover:scale-105 transition">
+                <svg class="w-7 h-7" viewBox="0 0 32 32" fill="none">
+                  <rect x="9" y="11" width="14" height="17" rx="4" fill="#d946ef" fill-opacity="0.2" stroke="#a21caf" stroke-width="2"/>
+                  <rect x="12" y="6" width="8" height="5" rx="1.5" fill="#a21caf"/>
+                  <path d="M16 15l2.5 4.5a2.5 2.5 0 11-5 0L16 15z" fill="#c026d3" fill-opacity="0.5"/>
+                </svg>
+              </div>
+              <span class="text-xs font-bold text-slate-800 leading-tight">Acetona</span>
+              <span class="text-[10px] text-slate-500 mt-0.5">Removedor</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Mecanismo de Higiene -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+          <div class="flex items-center justify-between mb-2.5">
+            <h2 class="text-sm font-extrabold uppercase tracking-wide text-slate-700 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+              Mecanismo de Higiene
+            </h2>
+            <span id="selectedToolBadge" class="text-xs font-semibold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">Selecione 1 opção</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3" id="toolOptions">
+            <!-- Algodão -->
+            <button type="button" data-tool="algodao" class="option-card group flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 bg-slate-50/60 text-left cursor-pointer">
+              <div class="w-12 h-12 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                <svg class="w-8 h-8" viewBox="0 0 36 36" fill="none">
+                  <circle cx="14" cy="19" r="7" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                  <circle cx="21" cy="17" r="6.5" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                  <circle cx="18" cy="13" r="6" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                  <circle cx="18" cy="21" r="6.5" fill="#ffffff" stroke="#64748b" stroke-width="1.8"/>
+                  <path d="M13 18c2-1 8-1 10 0" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-slate-800">Algodão Hidrófilo</div>
+                <div class="text-[11px] text-slate-500">Macio e descartável</div>
+              </div>
+            </button>
+
+            <!-- Esponja -->
+            <button type="button" data-tool="esponja" class="option-card group flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 bg-slate-50/60 text-left cursor-pointer">
+              <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+                <svg class="w-8 h-8" viewBox="0 0 36 36" fill="none">
+                  <rect x="6" y="13" width="24" height="13" rx="3" fill="#facc15" stroke="#ca8a04" stroke-width="1.8"/>
+                  <rect x="6" y="10" width="24" height="5" rx="2" fill="#15803d" stroke="#166534" stroke-width="1.5"/>
+                  <circle cx="12" cy="19" r="1.3" fill="#ca8a04"/>
+                  <circle cx="18" cy="22" r="1.6" fill="#ca8a04"/>
+                  <circle cx="24" cy="18" r="1.2" fill="#ca8a04"/>
+                </svg>
+              </div>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-slate-800">Esponja Dupla Face</div>
+                <div class="text-[11px] text-slate-500">Abrasiva / multiuso</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Telemetry / Live Monitor Card -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Monitor da Raspadinha (Alvo Venoso)</h3>
+            <button id="btnToggleGuide" type="button" class="text-xs font-semibold text-teal-700 hover:text-teal-900 underline">
+              Mostrar guia espiral
+            </button>
+          </div>
+
+          <!-- Progress Bar -->
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-1">
+              <span class="text-slate-600">Área do Alvo Limpa:</span>
+              <span id="coverageText" class="text-teal-700 font-bold">0% (Meta: preencher o alvo!)</span>
+            </div>
+            <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+              <div id="coverageBar" class="h-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-150" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Direction Live Feedback -->
+          <div class="flex items-center justify-between bg-slate-50 rounded-xl p-2.5 border border-slate-200/80">
+            <div class="flex items-center gap-2">
+              <span id="directionIcon" class="text-lg">🌀</span>
+              <div>
+                <div class="text-[11px] font-semibold text-slate-500 uppercase">Sentido do Movimento</div>
+                <div id="directionStatusText" class="text-xs font-bold text-slate-700">Comece no centro do alvo e vá para fora!</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Step 3 Interactive Arm Scratch-Off Canvas -->
+      <section class="lg:col-span-7">
+        <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-md border border-slate-200/90 flex flex-col">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h2 class="text-sm sm:text-base font-extrabold text-slate-800 flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center font-bold">3</span>
+                Raspe o Alvo no Braço (Fossa Cubital)
+              </h2>
+              <p class="text-xs text-slate-500">Arraste o dedo ou mouse sobre o alvo da veia para fazer a assepsia.</p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="btnResetScratch" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1">
+                <span>🔄</span> Reiniciar Braço
+              </button>
+            </div>
+          </div>
+
+          <!-- Interactive Canvas Container -->
+          <div id="canvasContainer" class="canvas-wrapper w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl overflow-hidden border-2 border-teal-200 bg-slate-900 shadow-inner relative select-none">
+            <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+            <!-- Floating Warning Banner when equipment not chosen -->
+            <div id="equipPromptOverlay" class="pointer-events-none absolute top-3 left-3 right-3 flex justify-center transition-opacity duration-200">
+              <div class="bg-slate-900/80 backdrop-blur-md text-white text-xs font-semibold px-3.5 py-2 rounded-xl shadow-lg border border-white/15 flex items-center gap-2">
+                <span>👆</span>
+                <span id="equipPromptText">Escolha o produto (1) e o material (2), depois raspe do centro do alvo para fora!</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Bar under Canvas -->
+          <div class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="text-xs text-slate-500 flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              <span>Dica clínica: O alvo fica bem sobre a <strong>veia intermédia do cotovelo</strong>.</span>
+            </div>
+
+            <button id="btnEvaluate" type="button" class="px-5 py-3 rounded-xl font-extrabold text-sm bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+              <span>💉 Finalizar Assepsia e Verificar Resultado</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Result Modal (Win or Bacterial Infection Sticker) -->
+  <div id="resultModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 my-auto relative overflow-hidden">
+      <!-- Top Decorative Header -->
+      <div id="modalHeaderBanner" class="rounded-2xl p-4 text-center mb-4 relative overflow-hidden">
+        <div class="inline-block text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-2" id="modalBadge">
+          Figurinha Desbloqueada!
+        </div>
+        <h3 id="modalTitle" class="text-xl sm:text-2xl font-black leading-tight"></h3>
+      </div>
+
+      <!-- Collectible Sticker Card Showcase -->
+      <div class="flex flex-col items-center justify-center my-3">
+        <div id="stickerCardContainer" class="sticker-anim w-44 h-48 rounded-2xl p-3 flex flex-col items-center justify-between shadow-xl border-4 relative">
+          <div class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/80 text-slate-800 shadow-sm" id="stickerNumber">
+            FIGURINHA #01
+          </div>
+          <div id="stickerSvgSlot" class="w-24 h-24 flex items-center justify-center my-1 float-anim"></div>
+          <div id="stickerName" class="text-xs font-extrabold text-center leading-tight px-2 py-1 rounded-lg w-full bg-white/90 text-slate-900 shadow-sm"></div>
+        </div>
+      </div>
+
+      <!-- Main Result Message -->
+      <div id="modalMainPhrase" class="text-center text-sm sm:text-base font-medium text-slate-700 mb-3 px-2"></div>
+
+      <!-- Diagnostic Checklist of the 4 Rules -->
+      <div id="modalChecklist" class="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 mb-4 space-y-2 text-xs"></div>
+
+      <!-- Official Event Invitation Card -->
+      <div class="rounded-2xl bg-gradient-to-br from-teal-900 via-teal-800 to-cyan-900 text-white p-4 shadow-lg border border-teal-500/30 mb-4">
+        <div class="flex items-center gap-2 text-amber-300 font-extrabold text-xs uppercase tracking-wider mb-1">
+          <span>🎉 Convite Especial — Venha Participar!</span>
+        </div>
+        <p id="modalInviteText" class="text-xs sm:text-sm text-teal-50 leading-relaxed mb-3"></p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-white/10 rounded-xl p-2.5 border border-white/15">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📅</span>
+            <div>
+              <div class="text-[10px] text-teal-200 uppercase font-semibold">Data da Gincana</div>
+              <div class="font-extrabold text-white">Dia 05/11/2026</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-base">📍</span>
+            <div>
+              <div class="text-[10px] text-teal-200 uppercase font-semibold">Local do Evento</div>
+              <div class="font-extrabold text-white">Pátio da Barão de Mauá - Unidade Central</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-2.5">
+        <button id="btnPlayAgain" type="button" class="flex-1 py-3 px-4 rounded-xl font-extrabold text-sm bg-teal-600 hover:bg-teal-700 text-white shadow-md transition cursor-pointer">
+          🔄 Jogar Novamente
+        </button>
+        <button id="btnCopyInvite" type="button" class="py-3 px-4 rounded-xl font-bold text-xs sm:text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
+          📋 Copiar Convite
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stickers Album Modal -->
+  <div id="albumModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl border border-slate-200 my-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+        <div>
+          <h3 class="text-lg font-black text-slate-900">🦠 Álbum de Figurinhas da Gincana</h3>
+          <p class="text-xs text-slate-500">Teste diferentes combinações (certas e erradas) para descobrir todas as figurinhas!</p>
+        </div>
+        <button id="btnCloseAlbum" type="button" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+      </div>
+
+      <div id="albumGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5"></div>
+
+      <div class="flex justify-end">
+        <button id="btnCloseAlbumBottom" type="button" class="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-slate-800 hover:bg-slate-900 text-white">
+          Fechar Álbum
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules / Tip Modal -->
+  <div id="rulesModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-3">
+        <h3 class="text-base sm:text-lg font-black text-slate-900">🧬 Regras da Assepsia Perfeita</h3>
+        <button id="btnCloseRules" type="button" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
+      </div>
+      <ul class="space-y-2.5 text-xs sm:text-sm text-slate-700 mb-5">
+        <li class="flex items-start gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+          <span class="text-base">🧴</span>
+          <div><strong>Produto Correto:</strong> Use <strong>Álcool 70%</strong>. Detergente líquido ou acetona não realizam antissepsia clínica para punção venosa!</div>
+        </li>
+        <li class="flex items-start gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+          <span class="text-base">☁️</span>
+          <div><strong>Mecanismo Correto:</strong> Use <strong>Algodão</strong>. Esponjas agridem a pele e acumulam microrganismos.</div>
+        </li>
+        <li class="flex items-start gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+          <span class="text-base">🌀</span>
+          <div><strong>Direção Centrífuga:</strong> Comece no <strong>meio do alvo</strong> (sobre a veia) e limpe em direção <strong>para fora</strong> (espiral ou radial centrífuga), sem voltar da borda para o centro!</div>
+        </li>
+        <li class="flex items-start gap-2.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+          <span class="text-base">🎯</span>
+          <div><strong>Preencher Todo o Espaço:</strong> Raspe todo o alvo circular para não deixar colônias bacterianas escondidas perto da punção.</div>
+        </li>
+      </ul>
+      <button id="btnGotItRules" type="button" class="w-full py-2.5 rounded-xl font-bold text-sm bg-teal-600 hover:bg-teal-700 text-white">
+        Entendi, vamos jogar!
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastNotice" class="fixed bottom-4 right-4 z-50 hidden bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg border border-white/15">
+    Convite copiado para a área de transferência!
+  </div>
+
+  <script>
+    (function () {
+      // --- State ---
+      const state = {
+        selectedProduct: null,
+        selectedTool: null,
+        soundEnabled: true,
+        showSpiralGuide: false,
+        isDrawing: false,
+        hasStartedScratching: false,
+        coveragePercent: 0,
+        // Direction tracking
+        startedInCenter: null, // true if first touch inside inner zone
+        centripetalViolations: 0,
+        outwardProgressCount: 0,
+        lastRadius: null,
+        minRadiusSeenInStroke: null,
+        maxRadiusSeenInStroke: 0,
+        strokePoints: [],
+        unlockedStickers: {
+          bacteria_produto: false,
+          bacteria_esponja: false,
+          bacteria_direcao: false,
+          bacteria_espaco: false,
+          selo_perfeito: false
+        }
+      };
+
+      // Load saved stickers safely
+      try {
+        const saved = localStorage.getItem('assepsia_stickers_v1');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          Object.assign(state.unlockedStickers, parsed);
+        }
+      } catch (e) {}
+
+      function saveStickers() {
+        try {
+          localStorage.setItem('assepsia_stickers_v1', JSON.stringify(state.unlockedStickers));
+        } catch (e) {}
+        updateAlbumBadge();
+      }
+
+      // --- Sticker Catalog ---
+      const STICKERS = {
+        bacteria_produto: {
+          id: 'bacteria_produto',
+          num: 'FIGURINHA #01',
+          name: 'Pseudomonas Química',
+          themeClass: 'bg-gradient-to-b from-fuchsia-100 to-rose-200 border-rose-400',
+          svg: `<svg viewBox="0 0 100 100" class="w-24 h-24">
+            <circle cx="50" cy="52" r="30" fill="#e11d48" stroke="#881337" stroke-width="3.5"/>
+            <path d="M50 22 C48 10, 56 10, 52 22 M78 40 C90 36, 90 46, 78 46 M80 62 C92 64, 90 74, 77 67 M22 42 C10 35, 10 47, 22 48 M23 64 C11 66, 14 75, 25 69 M44 82 C40 94, 52 95, 52 82" stroke="#881337" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+            <circle cx="40" cy="46" r="6" fill="#fff"/><circle cx="41" cy="46" r="3" fill="#1e293b"/>
+            <circle cx="60" cy="46" r="6" fill="#fff"/><circle cx="59" cy="46" r="3" fill="#1e293b"/>
+            <path d="M36 37 L46 41 M64 37 L54 41" stroke="#881337" stroke-width="3" stroke-linecap="round"/>
+            <path d="M38 64 Q50 55 62 64" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <circle cx="34" cy="57" r="3" fill="#fda4af"/><circle cx="66" cy="56" r="3.5" fill="#fda4af"/>
+          </svg>`
+        },
+        bacteria_esponja: {
+          id: 'bacteria_esponja',
+          num: 'FIGURINHA #02',
+          name: 'Staphylococcus da Esponja',
+          themeClass: 'bg-gradient-to-b from-amber-100 to-orange-200 border-orange-400',
+          svg: `<svg viewBox="0 0 100 100" class="w-24 h-24">
+            <circle cx="36" cy="42" r="18" fill="#d97706" stroke="#78350f" stroke-width="3"/>
+            <circle cx="64" cy="42" r="18" fill="#f59e0b" stroke="#78350f" stroke-width="3"/>
+            <circle cx="50" cy="64" r="20" fill="#eab308" stroke="#78350f" stroke-width="3"/>
+            <circle cx="50" cy="48" r="22" fill="#f59e0b" stroke="#78350f" stroke-width="3.5"/>
+            <circle cx="42" cy="44" r="5.5" fill="#fff"/><circle cx="42" cy="44" r="2.5" fill="#0f172a"/>
+            <circle cx="58" cy="44" r="5.5" fill="#fff"/><circle cx="58" cy="44" r="2.5" fill="#0f172a"/>
+            <path d="M40 58 C45 65, 55 65, 60 58" stroke="#78350f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <path d="M44 59 L46 63 L49 59 M53 59 L55 63 L57 59" fill="#fff"/>
+          </svg>`
+        },
+        bacteria_direcao: {
+          id: 'bacteria_direcao',
+          num: 'FIGURINHA #03',
+          name: 'Bacilo do Vai-e-Vem',
+          themeClass: 'bg-gradient-to-b from-purple-100 to-indigo-200 border-purple-500',
+          svg: `<svg viewBox="0 0 100 100" class="w-24 h-24">
+            <rect x="26" y="24" width="48" height="54" rx="24" fill="#9333ea" stroke="#4c1d95" stroke-width="3.5"/>
+            <path d="M18 38 Q10 50 18 62 M82 38 Q90 50 82 62" stroke="#6b21a8" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <circle cx="41" cy="45" r="6" fill="#fff"/><circle cx="43" cy="45" r="2.8" fill="#0f172a"/>
+            <circle cx="59" cy="45" r="6" fill="#fff"/><circle cx="57" cy="45" r="2.8" fill="#0f172a"/>
+            <path d="M39 62 Q50 54 61 62" stroke="#f3e8ff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <circle cx="38" cy="32" r="3" fill="#c084fc"/><circle cx="62" cy="70" r="3.5" fill="#c084fc"/>
+          </svg>`
+        },
+        bacteria_espaco: {
+          id: 'bacteria_espaco',
+          num: 'FIGURINHA #04',
+          name: 'Colônia Escondida',
+          themeClass: 'bg-gradient-to-b from-lime-100 to-emerald-200 border-lime-500',
+          svg: `<svg viewBox="0 0 100 100" class="w-24 h-24">
+            <path d="M25 55 C20 32, 42 18, 58 26 C78 22, 86 48, 74 64 C80 82, 52 88, 42 76 C24 82, 16 68, 25 55 Z" fill="#65a30d" stroke="#365314" stroke-width="3.5"/>
+            <circle cx="42" cy="48" r="6" fill="#fff"/><circle cx="42" cy="48" r="3" fill="#1e293b"/>
+            <circle cx="60" cy="48" r="6" fill="#fff"/><circle cx="60" cy="48" r="3" fill="#1e293b"/>
+            <path d="M43 64 Q51 71 59 64" stroke="#ecfccb" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <circle cx="34" cy="36" r="3.5" fill="#a3e635"/><circle cx="66" cy="63" r="4" fill="#a3e635"/>
+          </svg>`
+        },
+        selo_perfeito: {
+          id: 'selo_perfeito',
+          num: 'FIGURINHA #05 ★ RARA',
+          name: 'Escudo Mestre da Assepsia',
+          themeClass: 'bg-gradient-to-b from-amber-100 via-yellow-100 to-teal-100 border-amber-400',
+          svg: `<svg viewBox="0 0 100 100" class="w-24 h-24">
+            <path d="M50 14 L80 26 V50 C80 70 66 83 50 90 C34 83 20 70 20 50 V26 L50 14 Z" fill="#0d9488" stroke="#f59e0b" stroke-width="4"/>
+            <path d="M50 22 L72 31 V49 C72 64 61 75 50 81 C39 75 28 64 28 49 V31 L50 22 Z" fill="#14b8a6"/>
+            <path d="M38 51 L46 59 L63 41" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle cx="26" cy="22" r="3" fill="#fbbf24"/><circle cx="76" cy="20" r="2.5" fill="#fbbf24"/>
+          </svg>`
+        }
+      };
+
+      // --- Web Audio Synthesizer ---
+      let audioCtx = null;
+      function ensureAudio() {
+        if (!state.soundEnabled) return null;
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      function playTone(freq, type, duration, gainVal = 0.08) {
+        const ctx = ensureAudio();
+        if (!ctx) return;
+        try {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, ctx.currentTime);
+          gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      function playResultSound(isSuccess) {
+        if (!state.soundEnabled) return;
+        if (isSuccess) {
+          playTone(523.25, 'sine', 0.14, 0.1);
+          setTimeout(() => playTone(659.25, 'sine', 0.14, 0.1), 120);
+          setTimeout(() => playTone(783.99, 'sine', 0.16, 0.1), 240);
+          setTimeout(() => playTone(1046.5, 'triangle', 0.35, 0.12), 360);
+        } else {
+          playTone(300, 'sawtooth', 0.18, 0.09);
+          setTimeout(() => playTone(250, 'sawtooth', 0.18, 0.09), 160);
+          setTimeout(() => playTone(190, 'sawtooth', 0.35, 0.1), 320);
+        }
+      }
+
+      // --- DOM Elements ---
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const scratchLayerCanvas = document.createElement('canvas');
+      const scratchCtx = scratchLayerCanvas.getContext('2d');
+
+      const productButtons = document.querySelectorAll('[data-product]');
+      const toolButtons = document.querySelectorAll('[data-tool]');
+      const selectedProductBadge = document.getElementById('selectedProductBadge');
+      const selectedToolBadge = document.getElementById('selectedToolBadge');
+      const coverageText = document.getElementById('coverageText');
+      const coverageBar = document.getElementById('coverageBar');
+      const directionIcon = document.getElementById('directionIcon');
+      const directionStatusText = document.getElementById('directionStatusText');
+      const equipPromptOverlay = document.getElementById('equipPromptOverlay');
+
+      // Geometry of target on canvas
+      let targetGeo = {
+        cx: 0,
+        cy: 0,
+        radius: 0,
+        innerRadius: 0,
+        midRadius: 0
+      };
+
+      // Grid cells inside target circle to compute accurate scratch coverage
+      let targetCells = [];
+
+      function updateEquipmentUI() {
+        const prodNames = {
+          alcool70: 'Álcool 70%',
+          detergente: 'Detergente Líquido',
+          acetona: 'Acetona'
+        };
+        const toolNames = {
+          algodao: 'Algodão Hidrófilo',
+          esponja: 'Esponja Dupla Face'
+        };
+
+        productButtons.forEach(btn => {
+          const key = btn.getAttribute('data-product');
+          btn.classList.toggle('selected', key === state.selectedProduct);
+        });
+        toolButtons.forEach(btn => {
+          const key = btn.getAttribute('data-tool');
+          btn.classList.toggle('selected', key === state.selectedTool);
+        });
+
+        selectedProductBadge.textContent = prodNames[state.selectedProduct] || 'Escolha 1 opção';
+        selectedToolBadge.textContent = toolNames[state.selectedTool] || 'Escolha 1 opção';
+      }
+
+      productButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selectedProduct = btn.getAttribute('data-product');
+          playTone(600, 'sine', 0.06, 0.05);
+          updateEquipmentUI();
+        });
+      });
+
+      toolButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selectedTool = btn.getAttribute('data-tool');
+          playTone(680, 'sine', 0.06, 0.05);
+          updateEquipmentUI();
+        });
+      });
+
+      // --- Initialize / Resize Canvas & Scratch Layer ---
+      function initCanvas(resetScratch = true) {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const w = Math.max(320, Math.floor(rect.width));
+        const h = Math.max(240, Math.floor(rect.height));
+
+        canvas.width = w;
+        canvas.height = h;
+
+        targetGeo.cx = w * 0.52;
+        targetGeo.cy = h * 0.50;
+        targetGeo.radius = Math.min(w, h) * 0.31;
+        targetGeo.innerRadius = targetGeo.radius * 0.36;
+        targetGeo.midRadius = targetGeo.radius * 0.68;
+
+        if (resetScratch || scratchLayerCanvas.width === 0) {
+          scratchLayerCanvas.width = w;
+          scratchLayerCanvas.height = h;
+          buildScratchOverlay(w, h);
+          buildCoverageGrid();
+          resetTrackingState();
+        }
+        renderScene();
+      }
+
+      function resetTrackingState() {
+        state.hasStartedScratching = false;
+        state.coveragePercent = 0;
+        state.startedInCenter = null;
+        state.centripetalViolations = 0;
+        state.outwardProgressCount = 0;
+        state.lastRadius = null;
+        state.strokePoints = [];
+        equipPromptOverlay.style.opacity = '1';
+        coverageText.textContent = '0% (Meta: preencher o alvo!)';
+        coverageBar.style.width = '0%';
+        directionIcon.textContent = '🌀';
+        directionStatusText.textContent = 'Comece no centro do alvo e vá para fora!';
+        directionStatusText.className = 'text-xs font-bold text-slate-700';
+      }
+
+      function buildCoverageGrid() {
+        targetCells = [];
+        const step = Math.max(8, Math.floor(targetGeo.radius / 10));
+        const rMax = targetGeo.radius * 0.92; // Effective inner target area
+        for (let y = Math.floor(targetGeo.cy - rMax); y <= targetGeo.cy + rMax; y += step) {
+          for (let x = Math.floor(targetGeo.cx - rMax); x <= targetGeo.cx + rMax; x += step) {
+            const dx = x - targetGeo.cx;
+            const dy = y - targetGeo.cy;
+            if (dx * dx + dy * dy <= rMax * rMax) {
+              targetCells.push({ x, y, cleaned: false });
+            }
+          }
+        }
+      }
+
+      function buildScratchOverlay(w, h) {
+        scratchCtx.globalCompositeOperation = 'source-over';
+        scratchCtx.clearRect(0, 0, w, h);
+
+        const { cx, cy, radius, innerRadius, midRadius } = targetGeo;
+
+        scratchCtx.save();
+        scratchCtx.beginPath();
+        scratchCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+        scratchCtx.clip();
+
+        // Metallic / Microbiota Scratch-off Coating
+        const grad = scratchCtx.createRadialGradient(cx, cy, innerRadius * 0.2, cx, cy, radius);
+        grad.addColorStop(0, '#cbd5e1');
+        grad.addColorStop(0.55, '#94a3b8');
+        grad.addColorStop(1, '#64748b');
+        scratchCtx.fillStyle = grad;
+        scratchCtx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+
+        // Subtle texture & tiny hidden microbes on the uncleaned skin coating
+        scratchCtx.fillStyle = 'rgba(71, 85, 105, 0.28)';
+        for (let i = 0; i < 95; i++) {
+          const angle = (i * 137.5 * Math.PI) / 180;
+          const dist = Math.sqrt(i / 95) * (radius * 0.95);
+          const px = cx + Math.cos(angle) * dist;
+          const py = cy + Math.sin(angle) * dist;
+          scratchCtx.beginPath();
+          scratchCtx.arc(px, py, (i % 3) + 1.5, 0, Math.PI * 2);
+          scratchCtx.fill();
+        }
+
+        // Concentric Target Rings on the Scratch Card
+        scratchCtx.strokeStyle = 'rgba(239, 68, 68, 0.65)';
+        scratchCtx.lineWidth = 2;
+        [radius * 0.96, midRadius, innerRadius].forEach(r => {
+          scratchCtx.beginPath();
+          scratchCtx.arc(cx, cy, r, 0, Math.PI * 2);
+          scratchCtx.stroke();
+        });
+
+        // Crosshairs on Scratch Card
+        scratchCtx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        scratchCtx.setLineDash([4, 4]);
+        scratchCtx.beginPath();
+        scratchCtx.moveTo(cx - radius, cy);
+        scratchCtx.lineTo(cx + radius, cy);
+        scratchCtx.moveTo(cx, cy - radius);
+        scratchCtx.lineTo(cx, cy + radius);
+        scratchCtx.stroke();
+        scratchCtx.setLineDash([]);
+
+        // Center Bullseye Label
+        scratchCtx.fillStyle = '#ef4444';
+        scratchCtx.beginPath();
+        scratchCtx.arc(cx, cy, 8, 0, Math.PI * 2);
+        scratchCtx.fill();
+
+        scratchCtx.fillStyle = '#1e293b';
+        scratchCtx.font = 'bold 11px Inter, sans-serif';
+        scratchCtx.textAlign = 'center';
+        scratchCtx.fillText('RASPE DO CENTRO', cx, cy - innerRadius - 6);
+        scratchCtx.fillText('PARA FORA 🎯', cx, cy + innerRadius + 15);
+
+        scratchCtx.restore();
+      }
+
+      // --- Draw Base Forearm, Veins, Target & Scratch Overlay ---
+      function renderScene() {
+        const w = canvas.width;
+        const h = canvas.height;
+        const { cx, cy, radius, innerRadius, midRadius } = targetGeo;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Clinical table background
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+        bgGrad.addColorStop(0, '#0f172a');
+        bgGrad.addColorStop(1, '#1e293b');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Medical blue drape sheet under arm
+        ctx.fillStyle = '#0284c7';
+        ctx.globalAlpha = 0.16;
+        ctx.fillRect(20, 20, w - 40, h - 40);
+        ctx.globalAlpha = 1.0;
+
+        // Draw Forearm / Antecubital Fossa (Braço estendido)
+        ctx.save();
+        const armTopLeftY = h * 0.17;
+        const armBottomLeftY = h * 0.83;
+        const armTopRightY = h * 0.22;
+        const armBottomRightY = h * 0.78;
+
+        ctx.beginPath();
+        ctx.moveTo(-10, armTopLeftY);
+        ctx.bezierCurveTo(w * 0.32, armTopLeftY - 12, w * 0.65, armTopRightY + 6, w + 10, armTopRightY);
+        ctx.lineTo(w + 10, armBottomRightY);
+        ctx.bezierCurveTo(w * 0.65, armBottomRightY - 6, w * 0.32, armBottomLeftY + 12, -10, armBottomLeftY);
+        ctx.closePath();
+
+        // Warm realistic skin gradient
+        const skinGrad = ctx.createLinearGradient(0, armTopLeftY, 0, armBottomLeftY);
+        skinGrad.addColorStop(0, '#e6b89c');
+        skinGrad.addColorStop(0.25, '#f3cfb6');
+        skinGrad.addColorStop(0.55, '#f7dcc7');
+        skinGrad.addColorStop(0.85, '#ecc1a1');
+        skinGrad.addColorStop(1, '#d59f7e');
+        ctx.fillStyle = skinGrad;
+        ctx.fill();
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#c08562';
+        ctx.stroke();
+
+        // Clip inside arm to draw veins and elbow crease
+        ctx.clip();
+
+        // Antecubital crease shadow (dobra do cotovelo)
+        ctx.strokeStyle = 'rgba(163, 102, 68, 0.25)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(cx - 12, armTopLeftY + 15);
+        ctx.quadraticCurveTo(cx - 28, cy, cx - 10, armBottomLeftY - 15);
+        ctx.stroke();
+
+        // Subcutaneous Veins (Veia Cefálica, Basílica e Intermédia do Cotovelo)
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Outer glow of veins
+        ctx.strokeStyle = 'rgba(14, 116, 144, 0.28)';
+        ctx.lineWidth = 10;
+        drawVeinsPath(ctx, w, h, cx, cy);
+
+        // Main vein core
+        ctx.strokeStyle = 'rgba(3, 105, 161, 0.48)';
+        ctx.lineWidth = 4.5;
+        drawVeinsPath(ctx, w, h, cx, cy);
+
+        // Clean Skin Sparkle inside Target Area (revealed as user scratches)
+        const cleanGlow = ctx.createRadialGradient(cx, cy, 4, cx, cy, radius);
+        cleanGlow.addColorStop(0, 'rgba(255, 255, 255, 0.32)');
+        cleanGlow.addColorStop(0.7, 'rgba(186, 230, 253, 0.18)');
+        cleanGlow.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = cleanGlow;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Visual feedback if wrong product or sponge was used on exposed skin
+        if (state.hasStartedScratching) {
+          if (state.selectedTool === 'esponja') {
+            // Red micro-abrasion lines from rough sponge
+            ctx.strokeStyle = 'rgba(220, 38, 38, 0.35)';
+            ctx.lineWidth = 1.5;
+            for (let i = -4; i <= 4; i++) {
+              ctx.beginPath();
+              ctx.moveTo(cx - radius * 0.7, cy + i * 11);
+              ctx.lineTo(cx + radius * 0.7, cy + i * 11 + 6);
+              ctx.stroke();
+            }
+          }
+          if (state.selectedProduct === 'detergente') {
+            // Greenish soap bubbles
+            ctx.fillStyle = 'rgba(132, 204, 22, 0.25)';
+            ctx.beginPath();
+            ctx.arc(cx - 22, cy - 15, 12, 0, Math.PI * 2);
+            ctx.arc(cx + 26, cy + 18, 9, 0, Math.PI * 2);
+            ctx.arc(cx + 12, cy - 25, 7, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (state.selectedProduct === 'acetona') {
+            // Irritated pinkish-purple tint
+            ctx.fillStyle = 'rgba(217, 70, 239, 0.20)';
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius * 0.85, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+        // Subtle anatomical target rings on the skin itself
+        ctx.strokeStyle = 'rgba(13, 148, 136, 0.45)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 5]);
+        [radius, midRadius, innerRadius].forEach(r => {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+        ctx.setLineDash([]);
+
+        // Puncture point marker over the median cubital vein
+        ctx.fillStyle = '#0d9488';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+
+        // Draw the Scratch-Off Coating Layer on top!
+        ctx.drawImage(scratchLayerCanvas, 0, 0);
+
+        // Optional Centrifugal Spiral Guide Overlay
+        if (state.showSpiralGuide) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(16, 185, 129, 0.85)';
+          ctx.lineWidth = 2.5;
+          ctx.setLineDash([6, 4]);
+          ctx.beginPath();
+          const turns = 2.4;
+          const steps = 90;
+          for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const angle = t * turns * Math.PI * 2;
+            const r = t * (radius * 0.88);
+            const sx = cx + Math.cos(angle) * r;
+            const sy = cy + Math.sin(angle) * r;
+            if (i === 0) ctx.moveTo(sx, sy);
+            else ctx.lineTo(sx, sy);
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Arrowhead at outer end of spiral
+          const endAngle = turns * Math.PI * 2;
+          const endR = radius * 0.88;
+          const ex = cx + Math.cos(endAngle) * endR;
+          const ey = cy + Math.sin(endAngle) * endR;
+          ctx.fillStyle = '#10b981';
+          ctx.beginPath();
+          ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // Draw Outer Target Frame & Tourniquet (Garrote) on Left Side of Arm
+        drawTourniquet(ctx, w, h, armTopLeftY, armBottomLeftY);
+      }
+
+      function drawVeinsPath(c, w, h, cx, cy) {
+        // Cephalic vein (upper branch)
+        c.beginPath();
+        c.moveTo(0, h * 0.34);
+        c.quadraticCurveTo(cx - 40, h * 0.36, cx + 10, cy - 28);
+        c.quadraticCurveTo(w * 0.75, h * 0.35, w, h * 0.38);
+        c.stroke();
+
+        // Basilic vein (lower branch)
+        c.beginPath();
+        c.moveTo(0, h * 0.66);
+        c.quadraticCurveTo(cx - 30, h * 0.63, cx - 5, cy + 22);
+        c.quadraticCurveTo(w * 0.72, h * 0.61, w, h * 0.59);
+        c.stroke();
+
+        // Median cubital vein (veia intermédia do cotovelo - passes right through target center!)
+        c.beginPath();
+        c.moveTo(cx - 52, h * 0.61);
+        c.quadraticCurveTo(cx - 8, cy + 4, cx, cy);
+        c.quadraticCurveTo(cx + 12, cy - 8, cx + 38, h * 0.36);
+        c.stroke();
+      }
+
+      function drawTourniquet(c, w, h, topY, botY) {
+        const tx = w * 0.12;
+        c.save();
+        c.fillStyle = '#0d9488';
+        c.strokeStyle = '#115e59';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.roundRect(tx - 14, topY - 4, 28, botY - topY + 8, 8);
+        c.fill();
+        c.stroke();
+
+        c.fillStyle = '#ffffff';
+        c.font = 'bold 10px Inter, sans-serif';
+        c.save();
+        c.translate(tx + 4, (topY + botY) / 2);
+        c.rotate(-Math.PI / 2);
+        c.textAlign = 'center';
+        c.fillText('GARROTE', 0, 0);
+        c.restore();
+        c.restore();
+      }
+
+      // --- Scratching & Centrifugal Motion Logic ---
+      function getCanvasPoint(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      }
+
+      function scratchAt(pt, prevPt) {
+        const { cx, cy, radius, innerRadius } = targetGeo;
+        const dx = pt.x - cx;
+        const dy = pt.y - cy;
+        const dist = Math.hypot(dx, dy);
+
+        // Only process inside or near target area
+        if (dist > radius * 1.18) return;
+
+        const brushRadius = Math.max(18, radius * 0.20);
+
+        // Erase from scratchLayerCanvas
+        scratchCtx.save();
+        scratchCtx.globalCompositeOperation = 'destination-out';
+        scratchCtx.lineCap = 'round';
+        scratchCtx.lineJoin = 'round';
+        scratchCtx.lineWidth = brushRadius * 2;
+        scratchCtx.beginPath();
+        if (prevPt) {
+          scratchCtx.moveTo(prevPt.x, prevPt.y);
+          scratchCtx.lineTo(pt.x, pt.y);
+        } else {
+          scratchCtx.arc(pt.x, pt.y, brushRadius, 0, Math.PI * 2);
+        }
+        scratchCtx.stroke();
+        if (!prevPt) scratchCtx.fill();
+        scratchCtx.restore();
+
+        // First touch inside target checks if started in center
+        if (!state.hasStartedScratching) {
+          state.hasStartedScratching = true;
+          equipPromptOverlay.style.opacity = '0';
+          // Consider center start valid if initial touch is within inner 50% of target radius
+          state.startedInCenter = dist <= radius * 0.50;
+          state.lastRadius = dist;
+          state.minRadiusSeenInStroke = dist;
+          state.maxRadiusSeenInStroke = dist;
+        } else if (state.lastRadius !== null) {
+          // Track radial progression
+          if (dist > state.maxRadiusSeenInStroke) {
+            state.maxRadiusSeenInStroke = dist;
+          }
+          if (dist > state.lastRadius + 1.5) {
+            state.outwardProgressCount++;
+          }
+          // Check if user moved significantly inward toward the center after reaching outer regions ("vai e vem" / centrípeto)
+          const inwardDrop = state.maxRadiusSeenInStroke - dist;
+          if (state.maxRadiusSeenInStroke > innerRadius * 1.15 && inwardDrop > radius * 0.38) {
+            state.centripetalViolations++;
+            state.maxRadiusSeenInStroke = dist; // Reset peak so one slip doesn't count 50 times, though 1 violation is already flagged
+          }
+          state.lastRadius = dist;
+        }
+
+        // Update cell coverage
+        let cleanedCount = 0;
+        const hitR2 = brushRadius * brushRadius;
+        for (let i = 0; i < targetCells.length; i++) {
+          const cell = targetCells[i];
+          if (!cell.cleaned) {
+            const cdx = cell.x - pt.x;
+            const cdy = cell.y - pt.y;
+            if (cdx * cdx + cdy * cdy <= hitR2) {
+              cell.cleaned = true;
+            }
+          }
+          if (cell.cleaned) cleanedCount++;
+        }
+
+        state.coveragePercent = targetCells.length > 0
+          ? Math.min(100, Math.round((cleanedCount / targetCells.length) * 100))
+          : 0;
+
+        updateLiveFeedback();
+        renderScene();
+      }
+
+      let lastScratchSoundTime = 0;
+      function updateLiveFeedback() {
+        coverageText.textContent = `${state.coveragePercent}% ${state.coveragePercent >= 85 ? '✅ Completo!' : '(Meta: preencher o alvo!)'}`;
+        coverageBar.style.width = `${state.coveragePercent}%`;
+
+        if (state.startedInCenter === false) {
+          directionIcon.textContent = '⚠️';
+          directionStatusText.textContent = 'Atenção: você começou fora do centro do alvo!';
+          directionStatusText.className = 'text-xs font-bold text-amber-600';
+        } else if (state.centripetalViolations > 0) {
+          directionIcon.textContent = '⚠️';
+          directionStatusText.textContent = 'Movimento incorreto: voltou da borda para o centro!';
+          directionStatusText.className = 'text-xs font-bold text-rose-600';
+        } else {
+          directionIcon.textContent = '✅';
+          directionStatusText.textContent = 'Ótimo! Movimento centrífugo (do meio para fora).';
+          directionStatusText.className = 'text-xs font-bold text-emerald-700';
+        }
+
+        const now = performance.now();
+        if (now - lastScratchSoundTime > 90) {
+          lastScratchSoundTime = now;
+          playTone(state.selectedTool === 'esponja' ? 170 : 420, state.selectedTool === 'esponja' ? 'sawtooth' : 'sine', 0.04, 0.025);
+        }
+      }
+
+      // Pointer Events on Canvas
+      let prevPoint = null;
+      function showToast(msg) {
+        const toast = document.getElementById('toastNotice');
+        toast.textContent = msg;
+        toast.classList.remove('hidden');
+        clearTimeout( showToast._t );
+        showToast._t = setTimeout(() => toast.classList.add('hidden'), 2600);
+      }
+
+      function handlePointerDown(e) {
+        e.preventDefault();
+        if (!state.selectedProduct || !state.selectedTool) {
+          playTone(240, 'sawtooth', 0.12, 0.07);
+          showToast('⚠️ Primeiro escolha o Produto (1) e o Material (2) antes de raspar o alvo!');
+          return;
+        }
+        state.isDrawing = true;
+        const pt = getCanvasPoint(e);
+        prevPoint = pt;
+
+        // If user starts a new stroke after lifting finger, allow starting from center again or continuing outward
+        const dist = Math.hypot(pt.x - targetGeo.cx, pt.y - targetGeo.cy);
+        if (state.hasStartedScratching && dist <= targetGeo.radius * 1.1) {
+          // If they lifted and re-started near the center, reset maxRadiusSeenInStroke for radial outward strokes!
+          if (dist <= targetGeo.radius * 0.48) {
+            state.maxRadiusSeenInStroke = dist;
+          }
+          state.lastRadius = dist;
+        }
+
+        scratchAt(pt, null);
+      }
+
+      function handlePointerMove(e) {
+        if (!state.isDrawing) return;
+        e.preventDefault();
+        const pt = getCanvasPoint(e);
+        scratchAt(pt, prevPoint);
+        prevPoint = pt;
+      }
+
+      function handlePointerUp() {
+        state.isDrawing = false;
+        prevPoint = null;
+      }
+
+      canvas.addEventListener('mousedown', handlePointerDown);
+      canvas.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseup', handlePointerUp);
+
+      canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+      canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+      window.addEventListener('touchend', handlePointerUp);
+
+      // --- Evaluate Asepsis Rules & Show Modal ---
+      function evaluateGame() {
+        if (!state.selectedProduct || !state.selectedTool) {
+          playTone(240, 'sawtooth', 0.12, 0.07);
+          showToast('⚠️ Escolha o Produto (1) e o Material (2) e raspe o alvo no braço!');
+          return;
+        }
+        const isProductCorrect = state.selectedProduct === 'alcool70';
+        const isToolCorrect = state.selectedTool === 'algodao';
+        const isCoverageCorrect = state.coveragePercent >= 85;
+        const isDirectionCorrect = state.hasStartedScratching && state.startedInCenter === true && state.centripetalViolations === 0 && state.outwardProgressCount >= 3;
+
+        const isSuccess = isProductCorrect && isToolCorrect && isCoverageCorrect && isDirectionCorrect;
+
+        // Determine which sticker to unlock
+        let stickerKey = 'selo_perfeito';
+        if (!isSuccess) {
+          if (!isProductCorrect) stickerKey = 'bacteria_produto';
+          else if (!isToolCorrect) stickerKey = 'bacteria_esponja';
+          else if (!isDirectionCorrect) stickerKey = 'bacteria_direcao';
+          else stickerKey = 'bacteria_espaco';
+        }
+
+        state.unlockedStickers[stickerKey] = true;
+        saveStickers();
+
+        const sticker = STICKERS[stickerKey];
+        const modal = document.getElementById('resultModal');
+        const headerBanner = document.getElementById('modalHeaderBanner');
+        const modalBadge = document.getElementById('modalBadge');
+        const modalTitle = document.getElementById('modalTitle');
+        const stickerCardContainer = document.getElementById('stickerCardContainer');
+        const stickerNumber = document.getElementById('stickerNumber');
+        const stickerSvgSlot = document.getElementById('stickerSvgSlot');
+        const stickerName = document.getElementById('stickerName');
+        const modalMainPhrase = document.getElementById('modalMainPhrase');
+        const modalChecklist = document.getElementById('modalChecklist');
+        const modalInviteText = document.getElementById('modalInviteText');
+
+        // Re-trigger sticker pop animation
+        stickerCardContainer.className = `sticker-anim w-44 h-48 rounded-2xl p-3 flex flex-col items-center justify-between shadow-xl border-4 relative ${sticker.themeClass}`;
+        stickerNumber.textContent = sticker.num;
+        stickerSvgSlot.innerHTML = sticker.svg;
+        stickerName.textContent = sticker.name;
+
+        if (isSuccess) {
+          headerBanner.className = 'rounded-2xl p-4 text-center mb-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white';
+          modalBadge.className = 'inline-block text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-1.5 bg-white/25 text-white';
+          modalBadge.textContent = '✨ Assepsia Impecável!';
+          modalTitle.textContent = 'Oba! Parece que você sabe muito!';
+          modalMainPhrase.innerHTML = `Você escolheu <strong>Álcool 70%</strong> com <strong>Algodão</strong>, preencheu todo o alvo da veia e seguiu o <strong>movimento centrífugo (do meio para fora)</strong> sem trazer contaminação de volta!`;
+          modalInviteText.innerHTML = `Mandou super bem! Venha participar da nossa <strong>Gincana sobre Assepsia e Risco Bacteriano</strong> para mais informações, desafios práticos e muita diversão!`;
+        } else {
+          headerBanner.className = 'rounded-2xl p-4 text-center mb-3 bg-gradient-to-r from-rose-600 to-orange-600 text-white';
+          modalBadge.className = 'inline-block text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-1.5 bg-black/25 text-amber-200';
+          modalBadge.textContent = '🦠 Nova Bactéria Desbloqueada!';
+          modalTitle.textContent = 'Infelizmente você ganhou uma infecção bacteriana!';
+          modalMainPhrase.innerHTML = `Ops! Um deslize na técnica de assepsia abriu caminho para as bactérias fazerem a festa no local da punção. Veja o que aconteceu:`;
+          modalInviteText.innerHTML = `Para saber mais e dominar todos os segredos da biossegurança, venha para a nossa <strong>Gincana sobre Assepsia e Risco Bacteriano</strong>!`;
+        }
+
+        const prodLabelMap = {
+          alcool70: 'Álcool 70%',
+          detergente: 'Detergente Líquido (Incorreto)',
+          acetona: 'Acetona (Incorreto)'
+        };
+        const toolLabelMap = {
+          algodao: 'Algodão Hidrófilo',
+          esponja: 'Esponja Abrasiva (Incorreto)'
+        };
+
+        let dirExplanation = 'Movimento centrífugo correto (do centro para fora)';
+        if (!state.hasStartedScratching) {
+          dirExplanation = 'Você ainda não raspou o alvo no braço';
+        } else if (state.startedInCenter === false) {
+          dirExplanation = 'Começou fora do meio do alvo (deve iniciar no centro e ir para fora)';
+        } else if (state.centripetalViolations > 0) {
+          dirExplanation = 'Fez movimento de vai-e-vem / voltou da borda para o centro';
+        }
+
+        modalChecklist.innerHTML = `
+          <div class="flex items-center justify-between py-1 border-b border-slate-200/70">
+            <span class="font-semibold text-slate-600">1. Produto utilizado:</span>
+            <span class="font-bold ${isProductCorrect ? 'text-emerald-700' : 'text-rose-600'}">${isProductCorrect ? '✅' : '❌'} ${prodLabelMap[state.selectedProduct]}</span>
+          </div>
+          <div class="flex items-center justify-between py-1 border-b border-slate-200/70">
+            <span class="font-semibold text-slate-600">2. Mecanismo de higiene:</span>
+            <span class="font-bold ${isToolCorrect ? 'text-emerald-700' : 'text-rose-600'}">${isToolCorrect ? '✅' : '❌'} ${toolLabelMap[state.selectedTool]}</span>
+          </div>
+          <div class="flex items-center justify-between py-1 border-b border-slate-200/70">
+            <span class="font-semibold text-slate-600">3. Direção da limpeza:</span>
+            <span class="font-bold text-right ${isDirectionCorrect ? 'text-emerald-700' : 'text-rose-600'}">${isDirectionCorrect ? '✅' : '❌'} ${dirExplanation}</span>
+          </div>
+          <div class="flex items-center justify-between py-1">
+            <span class="font-semibold text-slate-600">4. Preenchimento do alvo:</span>
+            <span class="font-bold ${isCoverageCorrect ? 'text-emerald-700' : 'text-rose-600'}">${isCoverageCorrect ? '✅' : '❌'} ${state.coveragePercent}% limpo ${isCoverageCorrect ? '(Completo)' : '(Espaço incompleto!)'}</span>
+          </div>
+        `;
+
+        playResultSound(isSuccess);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      // --- Album Rendering ---
+      function updateAlbumBadge() {
+        const count = Object.values(state.unlockedStickers).filter(Boolean).length;
+        document.getElementById('albumBadge').textContent = `${count}/5`;
+      }
+
+      function renderAlbumModal() {
+        const grid = document.getElementById('albumGrid');
+        const descriptions = {
+          bacteria_produto: 'Desbloqueada ao usar Detergente ou Acetona em vez de Álcool 70%.',
+          bacteria_esponja: 'Desbloqueada ao usar Esponja em vez de Algodão.',
+          bacteria_direcao: 'Desbloqueada ao limpar na direção errada (fora do sentido centrífugo).',
+          bacteria_espaco: 'Desbloqueada ao não preencher todo o espaço do alvo.',
+          selo_perfeito: 'Desbloqueada ao acertar todas as etapas da assepsia!'
+        };
+
+        grid.innerHTML = Object.keys(STICKERS).map(key => {
+          const item = STICKERS[key];
+          const unlocked = state.unlockedStickers[key];
+          return `
+            <div class="rounded-2xl p-3 border-2 flex flex-col items-center text-center transition ${unlocked ? item.themeClass : 'bg-slate-100 border-slate-200 opacity-75'}">
+              <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-white/80 text-slate-700 mb-1">${item.num}</span>
+              <div class="w-20 h-20 flex items-center justify-center my-1">
+                ${unlocked ? item.svg : '<span class="text-3xl">🔒</span>'}
+              </div>
+              <div class="text-xs font-extrabold text-slate-900">${unlocked ? item.name : 'Figurinha Misteriosa'}</div>
+              <p class="text-[11px] text-slate-600 mt-1 leading-snug">${descriptions[key]}</p>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // --- Buttons & Listeners ---
+      document.getElementById('btnEvaluate').addEventListener('click', evaluateGame);
+
+      document.getElementById('btnResetScratch').addEventListener('click', () => {
+        playTone(480, 'sine', 0.08, 0.05);
+        initCanvas(true);
+      });
+
+      document.getElementById('btnToggleGuide').addEventListener('click', (e) => {
+        state.showSpiralGuide = !state.showSpiralGuide;
+        e.target.textContent = state.showSpiralGuide ? 'Ocultar guia espiral' : 'Mostrar guia espiral';
+        renderScene();
+      });
+
+      document.getElementById('btnPlayAgain').addEventListener('click', () => {
+        document.getElementById('resultModal').classList.add('hidden');
+        document.getElementById('resultModal').classList.remove('flex');
+        initCanvas(true);
+      });
+
+      document.getElementById('btnCopyInvite').addEventListener('click', () => {
+        const text = '🎯 Venha participar da nossa Gincana sobre Assepsia e Risco Bacteriano! 📅 Dia 05/11/2026 | 📍 Local: Pátio da Barão de Mauá - Unidade Central.';
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(() => {});
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+        }
+        const toast = document.getElementById('toastNotice');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2600);
+      });
+
+      // Album Modal controls
+      document.getElementById('btnAlbum').addEventListener('click', () => {
+        renderAlbumModal();
+        const m = document.getElementById('albumModal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      });
+
+      ['btnCloseAlbum', 'btnCloseAlbumBottom'].forEach(id => {
+        document.getElementById(id).addEventListener('click', () => {
+          const m = document.getElementById('albumModal');
+          m.classList.add('hidden');
+          m.classList.remove('flex');
+        });
+      });
+
+      // Rules Modal controls
+      document.getElementById('btnRules').addEventListener('click', () => {
+        const m = document.getElementById('rulesModal');
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      });
+
+      ['btnCloseRules', 'btnGotItRules'].forEach(id => {
+        document.getElementById(id).addEventListener('click', () => {
+          const m = document.getElementById('rulesModal');
+          m.classList.add('hidden');
+          m.classList.remove('flex');
+        });
+      });
+
+      // Sound Toggle
+      document.getElementById('btnSound').addEventListener('click', () => {
+        state.soundEnabled = !state.soundEnabled;
+        document.getElementById('soundIcon').textContent = state.soundEnabled ? '🔊' : '🔇';
+      });
+
+      // Window Load & Resize
+      window.addEventListener('resize', () => {
+        initCanvas(true);
+      });
+
+      window.onload = () => {
+        updateEquipmentUI();
+        updateAlbumBadge();
+        initCanvas(true);
+      };
+    })();
+  </script>
+</body>
+</html>
